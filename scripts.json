@@ -1,0 +1,16 @@
+{
+  "hub": {
+    "status": "Working / Undetected",
+    "version": "v1.0.0",
+    "updated": "17/08/26"
+  },
+  "scripts": [
+    {
+      "name": "Steal a Egg",
+      "file": "StealEgg.lua",
+      "places": [107778070777162],
+      "status": "Working",
+      "tier": "Free"
+    }
+  ]
+}
