@@ -29,6 +29,27 @@ local LOGO_ID = 101377976094026
 local ACCENT = Color3.fromHex("#4C8DFF")
 local DANGER = Color3.fromHex("#E5484D")
 
+-- ============================================================ LOADER HANDOFF
+-- The loader writes the user's setup choices here before running us. Empty
+-- when the script is executed on its own, in which case the defaults stand.
+
+local Handoff = (getgenv and getgenv().Supra) or {}
+local HANDOFF_LANG = type(Handoff.Lang) == "string" and Handoff.Lang or nil
+local HANDOFF_THEME
+
+do
+	local hex = Handoff.AccentHex
+	if type(hex) == "string" then
+		local ok, colour = pcall(Color3.fromHex, hex)
+		if ok then
+			ACCENT = colour
+			-- Name it after the colour so re-running never registers a
+			-- duplicate and the Settings dropdown keeps one stable entry.
+			HANDOFF_THEME = "Supra" .. hex:gsub("#", ""):upper()
+		end
+	end
+end
+
 -- ============================================================ CORE
 
 local function Fetch(name)
@@ -104,6 +125,15 @@ local LANGUAGES = {
 
 local TRANSLATIONS = {
 	en = {
+		["ESP"] = "ESP",
+		["Farm"] = "Farm",
+		["Home"] = "Home",
+		["Main"] = "Main",
+		["Pets"] = "Pets",
+		["Progress"] = "Progress",
+		["Settings"] = "Settings",
+		["System"] = "System",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Colour scheme for the whole menu",
 		["Language"] = "Language",
 		["Menu language"] = "Menu language",
@@ -207,6 +237,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Your executor has no file access, so configs are disabled.",
 	},
 	es = {
+		["ESP"] = "ESP",
+		["Farm"] = "Granja",
+		["Home"] = "Inicio",
+		["Main"] = "Principal",
+		["Pets"] = "Mascotas",
+		["Progress"] = "Progreso",
+		["Settings"] = "Ajustes",
+		["System"] = "Sistema",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Esquema de color de todo el menu",
 		["Language"] = "Idioma",
 		["Menu language"] = "Idioma del menu",
@@ -310,6 +349,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Tu executor no tiene acceso a archivos, las configuraciones estan desactivadas.",
 	},
 	pt = {
+		["ESP"] = "ESP",
+		["Farm"] = "Fazenda",
+		["Home"] = "Inicio",
+		["Main"] = "Principal",
+		["Pets"] = "Pets",
+		["Progress"] = "Progresso",
+		["Settings"] = "Configuracoes",
+		["System"] = "Sistema",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Esquema de cores de todo o menu",
 		["Language"] = "Idioma",
 		["Menu language"] = "Idioma do menu",
@@ -413,6 +461,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Seu executor nao tem acesso a arquivos, as configuracoes estao desativadas.",
 	},
 	fr = {
+		["ESP"] = "ESP",
+		["Farm"] = "Ferme",
+		["Home"] = "Accueil",
+		["Main"] = "Principal",
+		["Pets"] = "Familiers",
+		["Progress"] = "Progression",
+		["Settings"] = "Parametres",
+		["System"] = "Systeme",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Palette de couleurs de tout le menu",
 		["Language"] = "Langue",
 		["Menu language"] = "Langue du menu",
@@ -516,6 +573,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Ton executor n'a pas d'acces fichier, les configurations sont desactivees.",
 	},
 	ru = {
+		["ESP"] = "ESP",
+		["Farm"] = "Ферма",
+		["Home"] = "Главная",
+		["Main"] = "Главное",
+		["Pets"] = "Питомцы",
+		["Progress"] = "Прогресс",
+		["Settings"] = "Настройки",
+		["System"] = "Система",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Цветовая схема всего меню",
 		["Language"] = "Язык",
 		["Menu language"] = "Язык меню",
@@ -619,6 +685,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Ваш экзекьютор не имеет доступа к файлам, конфиги отключены.",
 	},
 	tr = {
+		["ESP"] = "ESP",
+		["Farm"] = "Ciftlik",
+		["Home"] = "Ana Sayfa",
+		["Main"] = "Ana",
+		["Pets"] = "Evcil Hayvanlar",
+		["Progress"] = "Ilerleme",
+		["Settings"] = "Ayarlar",
+		["System"] = "Sistem",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "Tum menunun renk semasi",
 		["Language"] = "Dil",
 		["Menu language"] = "Menu dili",
@@ -722,6 +797,15 @@ local TRANSLATIONS = {
 		["Your executor has no file access, so configs are disabled."] = "Executor'un dosya erisimi yok, yapilandirmalar kapali.",
 	},
 	zh = {
+		["ESP"] = "ESP",
+		["Farm"] = "农场",
+		["Home"] = "主页",
+		["Main"] = "主要",
+		["Pets"] = "宠物",
+		["Progress"] = "进度",
+		["Settings"] = "设置",
+		["System"] = "系统",
+		["Webhook"] = "Webhook",
 		["Colour scheme for the whole menu"] = "整个菜单的配色方案",
 		["Language"] = "语言",
 		["Menu language"] = "菜单语言",
@@ -834,6 +918,34 @@ SafeCall(function()
 		Translations = TRANSLATIONS,
 	})
 end)
+
+-- Language has to be applied before any element is built, or the first pass
+-- renders in English and only later strings pick up the change.
+if HANDOFF_LANG then
+	SafeCall(function() WindUI:SetLanguage(HANDOFF_LANG) end)
+end
+
+-- Build a real theme from the accent the loader was given rather than
+-- approximating it onto the nearest of the stock themes. AddTheme just writes
+-- into WindUI.Themes, so ours behaves like any built-in and shows up in the
+-- Settings theme list automatically.
+if HANDOFF_THEME then
+	SafeCall(function()
+		local themes = WindUI.Themes
+		if not (themes and themes.Dark) then
+			HANDOFF_THEME = nil
+			return
+		end
+		if not themes[HANDOFF_THEME] then
+			local t = {}
+			for k, v in pairs(themes.Dark) do t[k] = v end
+			t.Name = HANDOFF_THEME
+			-- The four fields that actually carry the accent.
+			t.Primary, t.Slider, t.Checkbox, t.Toggle = ACCENT, ACCENT, ACCENT, ACCENT
+			WindUI:AddTheme(t)
+		end
+	end)
+end
 -- ============================================================ WINDOW
 
 local Window = WindUI:CreateWindow({
@@ -843,7 +955,7 @@ local Window = WindUI:CreateWindow({
 	Author = "Supra",
 	Folder = HUB_FOLDER,
 	Size = UDim2.fromOffset(WINDOW_SIZE.X, WINDOW_SIZE.Y),
-	Theme = "Dark",
+	Theme = HANDOFF_THEME or "Dark",
 	Resizable = true,
 	MinSize = Vector2.new(520, 380),
 	SideBarWidth = IS_MOBILE and 150 or 190,
@@ -858,20 +970,24 @@ local Window = WindUI:CreateWindow({
 
 Window:Tag({ Title = "v1.0", Color = ACCENT })
 
-local MainGroup = Window:Section({ Title = "Main" })
-local SystemGroup = Window:Section({ Title = "System" })
+local MainGroup = Window:Section({ Title = "loc:Main" })
+local SystemGroup = Window:Section({ Title = "loc:System" })
 
 local Tabs = {
-	Home = MainGroup:Tab({ Title = "Home", Icon = "layout-dashboard" }),
-	Farm = MainGroup:Tab({ Title = "Farm", Icon = "egg-fried" }),
-	Progress = MainGroup:Tab({ Title = "Progress", Icon = "trending-up" }),
-	ESP = MainGroup:Tab({ Title = "ESP", Icon = "eye" }),
-	Pets = MainGroup:Tab({ Title = "Pets", Icon = "paw-print" }),
-	Webhook = SystemGroup:Tab({ Title = "Webhook", Icon = "webhook" }),
-	Settings = SystemGroup:Tab({ Title = "Settings", Icon = "settings" }),
+	Home = MainGroup:Tab({ Title = "loc:Home", Icon = "layout-dashboard" }),
+	Farm = MainGroup:Tab({ Title = "loc:Farm", Icon = "egg-fried" }),
+	Progress = MainGroup:Tab({ Title = "loc:Progress", Icon = "trending-up" }),
+	ESP = MainGroup:Tab({ Title = "loc:ESP", Icon = "eye" }),
+	Pets = MainGroup:Tab({ Title = "loc:Pets", Icon = "paw-print" }),
+	Webhook = SystemGroup:Tab({ Title = "loc:Webhook", Icon = "webhook" }),
+	Settings = SystemGroup:Tab({ Title = "loc:Settings", Icon = "settings" }),
 }
 
 Island:AttachWindow(Window, WINDOW_SIZE)
+
+-- Core was initialised with the handoff accent already, but set it again so a
+-- standalone run that later changes theme keeps the pill in step.
+SafeCall(function() Island:SetAccent(ACCENT) end)
 
 -- ============================================================ GAME BRIDGE
 -- Every endpoint below was read from the game's NETWORK_MAP registry. Calls
@@ -3112,7 +3228,7 @@ do
 			Title = "loc:Theme",
 			Desc = "loc:Colour scheme for the whole menu",
 			Values = themeNames,
-			Value = WindUI:GetCurrentTheme() or "Dark",
+			Value = HANDOFF_THEME or WindUI:GetCurrentTheme() or "Dark",
 			Flag = "SAETheme",
 			SearchBarEnabled = true,
 			Callback = function(v)
@@ -3129,7 +3245,12 @@ do
 		Title = "loc:Language",
 		Desc = "loc:Menu language",
 		Values = langNames,
-		Value = "English",
+		Value = (function()
+			for _, l in ipairs(LANGUAGES) do
+				if l.Code == HANDOFF_LANG then return l.Name end
+			end
+			return "English"
+		end)(),
 		Flag = "SAELanguage",
 		Callback = function(v)
 			if type(v) == "table" then v = v[1] end
