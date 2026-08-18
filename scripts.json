@@ -18,6 +18,13 @@
       "places": [92637789841354],
       "status": "Working",
       "tier": "Free"
+    },
+    {
+      "name": "Grow a Chicken Fighter",
+      "file": "Chicken.lua",
+      "places": [94640181989498, 94939256104840],
+      "status": "Working",
+      "tier": "Free"
     }
   ]
 }
